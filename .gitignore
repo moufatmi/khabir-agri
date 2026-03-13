@@ -4,6 +4,5 @@ __pycache__/
 tmp/
 *.mp3
 .streamlit/
-# Ignore config with keys if you want, but better to use secrets. 
-# For this specific hackathon, we might leave it or show how to use secrets.
-# config.py
+# Ignore config with keys
+config.py
