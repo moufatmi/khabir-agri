@@ -1,8 +1,7 @@
+# Ignore temporary and sensitive files
 __pycache__/
 *.pyc
 .env
 tmp/
 *.mp3
 .streamlit/
-# Ignore config with keys
-config.py
