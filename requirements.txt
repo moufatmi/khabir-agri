@@ -1,0 +1,8 @@
+streamlit
+pandas
+pydeck
+folium
+streamlit-folium
+requests
+edge-tts
+google-generativeai

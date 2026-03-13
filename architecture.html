@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>هندسة نظام Alkhabir Agro | النظام الذكي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --secondary: #1e88e5;
+            --accent: #ffa000;
+            --bg: #f4f7f6;
+            --text: #333;
+            --card-bg: #fff;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .architecture-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            align-items: center;
+            position: relative;
+        }
+
+        .layer {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-right: 8px solid var(--primary);
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .layer:hover {
+            transform: translateY(-5px);
+        }
+
+        .layer-title {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .components {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .component {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #eee;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .component span {
+            display: block;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            font-weight: 400;
+        }
+
+        /* Arrows between layers */
+        .arrow {
+            width: 4px;
+            height: 40px;
+            background: var(--primary);
+            position: relative;
+            opacity: 0.6;
+        }
+
+        .arrow::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid var(--primary);
+        }
+
+        /* Specialized styles for different layers */
+        .layer.input { border-right-color: var(--secondary); }
+        .layer.data { border-right-color: var(--accent); }
+        .layer.output { border-right-color: #e91e63; }
+
+        .tech-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .summary {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 50px;
+            border: 1px dashed var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .components { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>هندسة نظام Alkhabir Agro</h1>
+        <p>تدفق البيانات ومعالجة الذكاء الاصطناعي لرفع كفاءة الري بالمغرب</p>
+    </header>
+
+    <div class="architecture-flow">
+        
+        <!-- Layer 1: Inputs -->
+        <div class="layer input">
+            <div class="layer-title">📍 طبقة المدخلات (User Interface)</div>
+            <div class="components">
+                <div class="component">🗺️ الخريطة التفاعلية<span>تحديد إحداثيات الضيعة (Folium)</span></div>
+                <div class="component">🌱 نوع المحصول<span>اختيار العوامل الزراعية (Kc)</span></div>
+                <div class="component">📏 المساحة والصبيب<span>بيانات لوجستية للمزرعة</span></div>
+            </div>
+        </div>
+
+        <div class="arrow"></div>
+
+        <!-- Layer 2: API Integration -->
+        <div class="layer data">
+            <div class="layer-title">☁️ جلب البيانات (Live Data Feeds)</div>
+            <div class="components">
+                <div class="component">🛰️ Open-Meteo Satellite<span>رطوبة التربة (0-7cm) من ECMWF</span></div>
+                <div class="component">🌡️ OpenWeather API<span>الحرارة، الرياح، توقعات الأمطار</span></div>
+                <div class="component">📜 NASA POWER fallback<span>بيانات تاريخية عند غياب اللحظية</span></div>
+            </div>
+        </div>
+
+        <div class="arrow"></div>
+
+        <!-- Layer 3: Logic Engine -->
+        <div class="layer">
+            <div class="layer-title">⚙️ محرك التحليل (Logic & AI Engine)</div>
+            <div class="components">
+                <div class="component">🧮 محرك FAO-56<span>حساب ETc = Kc * ETo</span></div>
+                <div class="component">🧠 Gemini 3.1 Flash<span>تحليل السياق وربط البيانات الزراعية</span></div>
+                <div class="component">🚦 نظام "أضواء المرور"<span>اتخاذ قرار الري (Green/Yellow/Red)</span></div>
+            </div>
+        </div>
+
+        <div class="arrow"></div>
+
+        <!-- Layer 4: Response -->
+        <div class="layer output">
+            <div class="layer-title">📊 طبقة المخرجات (Actionable Dashboard)</div>
+            <div class="components">
+                <div class="component">🗣️ مساعد صوتي<span>نصائح باللهجة المغربية/الفصحى (Edge-TTS)</span></div>
+                <div class="component">📅 توقعات 7 أيام<span>جدول ري استباقي (Predictive Chart)</span></div>
+                <div class="component">💰 التحليل الاقتصادي<span>حساب التوفير المالي (درهم)</span></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="summary">
+        <h3>💡 ملخص المهندس:</h3>
+        <p>هذا المعمار يربط بين **أحدث تقنيات الاستشعار عن بعد (Satellites)** وبين **أقوى نماذج الذكاء الاصطناعي (Gemini)**. يتميز النظام بالمرونة؛ حيث لا يعتمد على مصدر واحد للبيانات، بل يستخدم نظام "الاحتياط الذكي" (NASA fallback) لضمان عمل التطبيق في أي بقعة من المغرب وتحت أي ظروف تقنية.</p>
+    </div>
+
+    <footer style="text-align: center; margin-top: 30px; color: #999; font-size: 0.8rem;">
+        &copy; 2026 Alkhabir Agro - تصميم هندسي متقدم لمسابقة رمضان IA
+    </footer>
+</div>
+
+</body>
+</html>
