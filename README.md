@@ -1,4 +1,4 @@
-# 🌱 Al-Khabir Agro (الخبير الزراعي)
+# 🌱 Al-Khabir Agri (الخبير الزراعي)
 > **Precision Irrigation Advisor powered by Satellite Data & AI** 🛰️🧠
 
 Al-Khabir Agro is a smart irrigation decision-support system designed for farmers in the **Oriental region of Morocco**. It leverages real-time European satellite data (**ECMWF/ERA5**) and the **FAO-56 Penman-Monteith** scientific framework to calculate exact water needs, promoting water sovereignty and agricultural efficiency.
