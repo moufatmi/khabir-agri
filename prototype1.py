@@ -3,8 +3,8 @@ import google.generativeai as genai
 import requests
 
 # 1. إعدادات الـ APIs (حط مفاتيحك هنا)
-genai.configure(api_key="YOUR_GEMINI_API_KEY")
-WEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY"
+genai.configure(api_key="AIzaSyDZ77xzZ13g6UZYuX0SGknEBRsU2WTB91A")
+WEATHER_API_KEY = "c4377ce01ad081892081c897b12890d7"
 
 # 2. منطق الحساب الفلاحي (FAO-56 & ORMVAM)
 # المعادلة: ETc = Kc * ETo

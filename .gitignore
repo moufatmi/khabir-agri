@@ -1,7 +1,0 @@
-# Ignore temporary and sensitive files
-__pycache__/
-*.pyc
-.env
-tmp/
-*.mp3
-.streamlit/

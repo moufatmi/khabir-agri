@@ -5,22 +5,24 @@ def calculate_etc(kc: float, eto: float) -> float:
     """
     return kc * eto
 
-def get_water_savings(etc: float, area_ha: float = 1.0) -> dict:
+def get_water_savings(etc_mm: float, area_ha: float = 1.0) -> dict:
     """
-    Calculate potential water savings (target 30%).
-    Returns recommended volume and saved volume in Liters for the given area.
+    Calculate required water volume in Liters based on ETc (mm) and area (ha).
+    Includes a wetted area factor (0.6) to represent drip irrigation efficiency.
     """
-    # 1 mm of water over 1 Hectare = 10,000 Liters
-    etc_liters_per_ha = etc * 10000 
-    traditional_liters_per_ha = etc_liters_per_ha * 1.43 # assumed 30% excessive watering
-
-    saved_liters = (traditional_liters_per_ha - etc_liters_per_ha) * area_ha
-    recommended_liters = etc_liters_per_ha * area_ha
+    # 1 mm over 1 ha = 10,000 Liters.
+    # Wetted area factor (0.6) represents that we only water the root zone.
+    wetted_area_factor = 0.6
+    recommended_liters = etc_mm * 10000 * area_ha * wetted_area_factor
+    
+    # Traditional flooding uses ~2x more water due to evaporation/runoff.
+    traditional_liters = recommended_liters * 2.0 
+    saved_liters = traditional_liters - recommended_liters
     
     return {
         "recommended_liters": int(recommended_liters),
         "saved_liters": int(saved_liters),
-        "percent_saved": 30
+        "percent_saved": 50
     }
 
 def calculate_pumping_hours(recommended_liters: float, pump_flow_rate: float) -> float:

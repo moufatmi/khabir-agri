@@ -74,19 +74,21 @@ def render_irrigation_advisor(lat: float, lon: float, crop: str, stage: str, soi
             full_savings = get_water_savings(etc, area)
             daily_need_liters = full_savings['recommended_liters']
             
-            # Scheduled Logic: Consolidation (Skip Days)
+            # --- Traffic Light Logic ---
+            traffic_color, traffic_msg, traffic_icon = get_traffic_light(weather, current_moisture, soil)
+
+            # Scheduled Logic: Consolidation (Skip Days) override
             if etc < (soil_threshold * 0.4) and current_moisture > 25.0:
                 pumping_hours = 0.0
                 scheduled_liters = 0
+                if traffic_color == "Green": # Avoid confusing the user with Green + Skip
+                    traffic_color, traffic_msg, traffic_icon = ("Yellow", "التربة جيدة، انتظر يوم السقي الموالي.", "🟡")
             else:
                 scheduled_liters = daily_need_liters
                 pumping_hours = calculate_pumping_hours(scheduled_liters, pump_rate)
             
             savings_money = get_economic_impact(full_savings['saved_liters'])
             
-            # --- Traffic Light Logic ---
-            traffic_color, traffic_msg, traffic_icon = get_traffic_light(weather, current_moisture, soil)
-
             # --- Proactive Wind Logic ---
             is_windy = weather.get("wind_speed", 0) > 15
             if is_windy:
@@ -101,16 +103,26 @@ def render_irrigation_advisor(lat: float, lon: float, crop: str, stage: str, soi
             location_label = f"({lat}, {lon})"
             
             advice_text = ""
-            advice_stream = analyze_irrigation(user_prompt, weather, round(etc, 2), pumping_hours, traffic_color, location_label, crop, soil, area, stream=True)
+            advice_stream, error_api = analyze_irrigation(user_prompt, weather, round(etc, 2), pumping_hours, traffic_color, location_label, crop, soil, area, stream=True)
             
             placeholder = st.empty()
             if advice_stream:
-                for chunk in advice_stream:
-                    if chunk.text:
-                        advice_text += chunk.text
-                        placeholder.markdown(f"**{advice_text}**" + " ▌")
-                # Removed final placeholder write to avoid duplication
-                placeholder.empty()
+                try:
+                    for chunk in advice_stream:
+                        if chunk.text:
+                            advice_text += chunk.text
+                            placeholder.markdown(f"**{advice_text}**" + " ▌")
+                    placeholder.empty()
+                except Exception as e:
+                    advice_text = f"تعذر الحصول على النصيحة: {str(e)}"
+                    placeholder.error(advice_text)
+            else:
+                if error_api and error_api.startswith("LOCAL_FALLBACK:"):
+                    advice_text = error_api.replace("LOCAL_FALLBACK:", "")
+                    st.info("ℹ️ نصيحة تقنية (محرك احتياطي):") # Optional indicator
+                else:
+                    advice_text = f"الخبير الفني غير متاح حالياً. السبب: {error_api if error_api else 'فشل غير معروف'}"
+                    placeholder.warning(advice_text)
             
             st.session_state.irrigation_results = {
                 "weather": weather,
@@ -139,57 +151,77 @@ def render_irrigation_advisor(lat: float, lon: float, crop: str, stage: str, soi
         advice_text = res["advice"]
         
         st.markdown("---")
-        col_a, col_b = st.columns([2, 1])
-        with col_a:
-            st.markdown(f"<h1 style='margin:0;'>{traffic_icon} {traffic_msg}</h1>", unsafe_allow_html=True)
-        with col_b:
-            st.markdown(f"<div style='background-color:#E8F5E9; border-radius:10px; padding:10px; text-align:center; color:#2E7D32; font-weight:bold;'>💧 توفير التكاليف: {savings_money} درهم</div>", unsafe_allow_html=True)
         
+        # 1. Irrigation Gauge (Custom HTML/CSS)
+        irrigation_percent = 0
+        gauge_color = "#30363D"
+        if traffic_color == "Green":
+            irrigation_percent = 100
+            gauge_color = "#238636"
+        elif traffic_color == "Yellow":
+            irrigation_percent = 50
+            gauge_color = "#D29922"
+        else:
+            irrigation_percent = 10
+            gauge_color = "#DA3633"
+
+        st.markdown(f"""
+        <div style="background-color: #161B22; border: 1px solid #30363D; border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 20px;">
+            <h3 style="color: #8B949E; margin-bottom: 10px;">حالة الري: {traffic_msg}</h3>
+            <div style="width: 200px; height: 100px; margin: 0 auto; position: relative; overflow: hidden;">
+                <div style="width: 200px; height: 200px; border-radius: 50%; border: 15px solid #30363D; position: absolute; top: 0; left: 0; box-sizing: border-box;"></div>
+                <div style="width: 200px; height: 200px; border-radius: 50%; border: 15px solid {gauge_color}; position: absolute; top: 0; left: 0; box-sizing: border-box; clip-path: inset(0 0 50% 0); transform: rotate({(irrigation_percent * 1.8) - 180}deg);"></div>
+                <div style="position: absolute; bottom: 10px; left: 0; width: 100%; color: #FFFFFF; font-size: 1.2rem; font-weight: bold;">{traffic_icon} {traffic_color}</div>
+            </div>
+            <p style="color: #8B949E; margin-top: 10px;">باقي {int(pumping_hours * 60) if pumping_hours > 0 else 0} دقيقة</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 2. Premium Metrics Row
+        col_m1, col_m2, col_m3 = st.columns(3)
+        
+        with col_m1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">الاحتياج اليومي</div>
+                <div class="metric-value">{int(res['scheduled_liters'])} لتر</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with col_m2:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">التوفير الشهري</div>
+                <div class="metric-value">{int(savings_money * 30)} درهم</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with col_m3:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">رطوبة التربة</div>
+                <div class="metric-value">{wapor['soil_moisture']}%</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # 3. AI Advice Section
+        st.markdown(f"""
+        <div style="background-color: #161B22; border: 1px solid #30363D; border-radius: 12px; padding: 20px; margin-top: 20px; border-right: 5px solid #58A6FF;">
+            <h4 style="color: #58A6FF; margin-top: 0;">🤖 المستشار الذكي</h4>
+            <p style="color: #C9D1D9; line-height: 1.6;">{advice_text}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Audio Playback
         from services.api_tts import speak_advice_sync
-        col_t1, col_t2 = st.columns([0.85, 0.15])
-        with col_t1:
-            st.info("💡 نصيحة الخبير الشخصية:")
-        with col_t2:
-            if st.button("🔊", help="استمع للنصيحة بصوت الخبير"):
-                with st.spinner("جاري تحضير صوت الخبير..."):
-                    voice_path = speak_advice_sync(advice_text)
-                    st.audio(voice_path, format="audio/mp3", autoplay=True)
+        if st.button("🔊 استمع للنصيحة بصوت الخبير", use_container_width=True):
+            with st.spinner("جاري تحضير صوت الخبير..."):
+                voice_path = speak_advice_sync(advice_text)
+                st.audio(voice_path, format="audio/mp3", autoplay=True)
 
-        st.markdown(f"**{advice_text}**")
-        st.markdown("---")
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown("### ⏲️ جدول الري المقترح")
-            if pumping_hours > 0:
-                prompt_time = "06:00 AM" 
-                end_time = (datetime.datetime.strptime(prompt_time, "%I:%M %p") + datetime.timedelta(hours=pumping_hours)).strftime("%I:%M %p")
-                st.success(f"**الفترة:** {prompt_time} - {end_time}")
-                st.metric("مدة التشغيل اليوم", f"{pumping_hours} ساعة")
-            else:
-                st.warning("📴 لا توجد حاجة للري اليوم (Skip Day).")
-                st.info("التربة لا تزال تحتوي على رصيد مائي كافٍ.")
-
-        with c2:
-            st.markdown("### ⚠️ تنبيهات استباقية")
-            if is_windy:
-                st.error(f"⚠️ **تنبيه رياح:** هناك رياح قوية ({weather.get('wind_speed')} م/ث).")
-            elif weather.get("heatwave_alert"):
-                st.error("🔥 **موجة حر:** تجنب الري في وقت الظهيرة.")
-            else:
-                st.info("🌤️ الجو مناسب حالياً للري.")
-
-        m_need, m_sched = st.columns(2)
-        m_need.metric("الاحتياج اليومي (العلومي)", f"{res['daily_need_liters']} لتر")
-        m_sched.metric("الكمية المقررة لليوم", f"{res['scheduled_liters']} لتر")
-        
-        if pumping_hours > (area * 12):
-            st.warning("⚠️ تنبيه: المدة تتجاوز 12س/هكتار.")
-
-        # --- 7-Day Forecast ---
-        st.markdown("---")
-        st.markdown("### 📅 توقعات الري للأسبوع القادم (Predictive Analytics)")
-        
+        # 4. 7-Day Predictive Graph (Matching Style)
         forecast_list = get_forecast_data(lat, lon)
         accumulated_deficit_mm = 0
         soil_threshold = SOIL_THRESHOLDS.get(soil, 8.0)
@@ -224,16 +256,41 @@ def render_irrigation_advisor(lat: float, lon: float, crop: str, stage: str, soi
                 "ساعات الري": d_pumping
             })
             total_weekly_liters += d_daily_liters
-            
-        chart_df = pd.DataFrame(forecast_chart_data).set_index("اليوم")
-        c_h, c_l = st.tabs(["⏲️ الساعات المبرمجة", "💧 توزيع اللترات"])
+
+        st.markdown("### 📅 7-day predictive graph")
+        st.markdown(f'<p style="color: #8B949E; margin-top: -10px;">مجموع الأسبوع: {int(total_weekly_liters)} لتر</p>', unsafe_allow_html=True)
         
-        with c_h:
-            st.area_chart(chart_df["ساعات الري"], color="#1E88E5")
-            st.caption("تظهر الساعات فقط في الأيام التي نحتاج فيها لري عميق وكبير.")
-            
-        with c_l:
-            st.bar_chart(chart_df[["الاحتياج العلمي اليومي (لتر)", "الري المبرمج (لتر)"]])
-            st.caption("اللون الأزرق الداكن يمثل عطش النبات اليومي، واللون الفاتح يمثل متى سنقوم بالري فعلياً.")
-            
-        st.info(f"إجمالي مياه الأسبوع المتوقعة: {int(total_weekly_liters)} لتر.")
+        chart_df = pd.DataFrame(forecast_chart_data)
+        
+        # We use a custom bar chart with Altair for better color control matching the image
+        import altair as alt
+        
+        base = alt.Chart(chart_df).encode(x=alt.X('اليوم:N', sort=None, title=None))
+        
+        bar1 = base.mark_bar(cornerRadiusTopLeft=5, cornerRadiusTopRight=5, size=30).encode(
+            y=alt.Y('الاحتياج العلمي اليومي (لتر):Q', title=None),
+            color=alt.value('#238636'), # Darker Green
+            tooltip=['اليوم', 'الاحتياج العلمي اليومي (لتر)']
+        )
+        
+        bar2 = base.mark_bar(cornerRadiusTopLeft=5, cornerRadiusTopRight=5, size=20).encode(
+            y=alt.Y('الري المبرمج (لتر):Q', title=None),
+            color=alt.value('#7EE787'), # Brighter Green matching the image
+            tooltip=['اليوم', 'الري المبرمج (لتر)']
+        )
+        
+        final_chart = alt.layer(bar1, bar2).configure_view(stroke=None).configure_axis(
+            grid=False, domain=False, labelColor='#8B949E', tickColor='#8B949E'
+        ).properties(width='container', height=300)
+        
+        st.altair_chart(final_chart, use_container_width=True)
+        
+        st.markdown(f"""
+        <div style="background-color: #161B22; border: 1px solid #30363D; border-radius: 10px; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #8B949E; font-size: 0.8rem;">Weekly Total: {int(total_weekly_liters)} Liters</span>
+            <div style="display: flex; gap: 15px;">
+                <span style="color: #238636; font-size: 0.8rem;">● الاحتياج</span>
+                <span style="color: #7EE787; font-size: 0.8rem;">● المبرمج</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)

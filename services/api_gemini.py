@@ -15,37 +15,23 @@ genai.configure(api_key=GEMINI_API_KEY)
 @st.cache_resource
 def get_agricultural_model():
     """
-    إعداد الكاش للسياق الثابت وتحميل الموديل.
-    يتم تنفيذ هذا مرة واحدة فقط وتخزينه في ذاكرة Streamlit.
+    إعداد الموديل مع التعليمات البرمجية الأساسية.
     """
     system_instruction = """
     أنت 'الخبير الزراعي' لجهة الشرق. 
-    قواعدك العلمية ثابتة ومقدسة: 
-    - معادلة السقي: ETc = Kc * ETo.
+    تقوم بتحليل البيانات التقنية وتقديم نصائح ري دقيقة بناءً على معايير FAO-56.
     - معاملات Kc: ليمون (0.85)، زيتون (0.7)، لوز (0.75)، نخيل (0.9)، عنب (0.75)، خضروات (1.05)، حبوب (1.15).
-    - اللغة: اللغة العربية الفصحى فقط، بأسلوب بسيط ومباشر.
-    - المرجعية: دراسات ORMVAM ومعايير WaPOR.
-    - استراتيجية الري: بالنسبة للتربة الثقيلة (التيرس)، نفضل الري العميق والمتباعد لتشجيع الجذور. إذا اقترح النظام "يوم راحة" (0 ساعة)، اشرح للمزارع أن هذا أفضل لصحة النبات وقوة جذوره.
-    - المهمة: تقديم نصيحة فورية بناءً على المعطيات التقنية التي ستزود بها.
+    - التربة الثقيلة (التيرس): تحب الري العميق والمتباعد (Allowable Depletion).
+    - اللغة: العربية الفصحى المبسطة.
     """
-    
+    # We use Flash 2.0 Lite or Flash Latest for higher free-tier quotas
     try:
-        # إنشاء الكاش (صالح لمدة ساعة)
-        # ملاحظة: يتطلب حساب Pay-as-you-go في Google AI Studio
-        cache = caching.CachedContent.create(
-            model='models/gemini-3.1-flash-lite-preview',
-            display_name='agricultural_rules_cache',
-            system_instruction=system_instruction,
-            contents=[],
-            ttl=datetime.timedelta(minutes=60),
-        )
-        return genai.GenerativeModel.from_cached_content(cached_content=cache)
-    except Exception as e:
-        # في حالة فشل الكاش (مثلاً حساب مجاني فقط)، نرجع للموديل العادي كخيار احتياطي
-        st.warning(f"ملاحظة: الكاش لم يشتغل (ربما بسبب نوع الحساب)، سنستخدم الموديل العادي. الخطأ: {e}")
-        return genai.GenerativeModel('gemini-3.1-flash-lite-preview', system_instruction=system_instruction)
+        return genai.GenerativeModel('gemini-2.0-flash-lite', system_instruction=system_instruction)
+    except:
+        return genai.GenerativeModel('gemini-flash-latest', system_instruction=system_instruction)
 
-# الحصول على الموديل (من الكاش إذا كان متوفراً)
+
+# الحصول على الموديل
 model = get_agricultural_model()
 
 def get_map_pro_tip(region: str, crop: str, moisture: float) -> str:
@@ -67,7 +53,6 @@ def analyze_irrigation(user_prompt: str, weather: dict, etc: float, pumping_hour
                   "Yellow": "حضي راسك، نقص من السقي.", 
                   "Green": "سقي دابا."}[traffic_light]
                   
-    # نمرر فقط المعطيات المتغيرة في كل طلب لتوفير التكلفة والوقت
     dynamic_context = f"""
     المعطيات الحالية للمزارع:
     - المنطقة: {region}
@@ -82,17 +67,31 @@ def analyze_irrigation(user_prompt: str, weather: dict, etc: float, pumping_hour
     - سؤال المزارع: "{user_prompt}"
     
     أجب كخبير حقيقي باختصار (جملتين) واستخدم معطيات المزارع في جوابك ليكون مقنعاً.
-    مثال: "بما أن مضختك تعطي {weather.get('pump_rate', 'X')} لتر في الساعة وأرضك تبلغ مساحتها {area} هكتار، فيجب تشغيلها لمدة {pumping_hours} ساعات..."
-    استخدم اللغة العربية الفصحى المبسطة والمباشرة.
     """
     
     try:
+        # Note: Streaming responses cannot be easily cached by st.cache_data
+        # If streaming is requested, we don't cache, but we prefer non-stream for stability here
         response = model.generate_content(dynamic_context, stream=stream)
-        if stream:
-            return response
-        return response.text, None
+        return response, None
     except Exception as e:
-        if stream:
-            return None
-        return f"وقع خطأ مع Gemini API: {str(e)}", None
+        # Check if it's a quota error or other fail
+        if "429" in str(e) or "quota" in str(e).lower():
+            # Smart Fallback: Generate scientific advice locally
+            fallback_advice = generate_local_advice(crop, traffic_light, pumping_hours, etc)
+            return None, f"LOCAL_FALLBACK:{fallback_advice}"
+            
+        error_msg = f"خطأ في الاتصال بـ Gemini: {str(e)}"
+        return None, error_msg
+
+def generate_local_advice(crop, traffic, hours, etc):
+    """
+    محرك بديل يولد نصيحة علمية إذا توقف الذكاء الاصطناعي (لحماية العرض التقني).
+    """
+    if traffic == "Red":
+        return f"بناءً على معايير FAO-56، لا ننصح بالري اليوم لمحصول {crop} نظراً لوجود رطوبة عالية في التربة أو توقع مطر. الري الآن قد يسبب اختناقاً للجذور."
+    elif traffic == "Green" and hours > 0:
+        return f"تشير الحسابات التقنية (ETc={etc} ملم) إلى حاجة محصول {crop} للماء حالياً. نوصي بتشغيل المضخة لمدة {hours} ساعة لضمان إنتاجية مثالية وتعويض تبخر اليوم."
+    else: # Yellow or Skip Days
+        return f"بناءً على نظام الري المتباعد (Allowable Depletion)، محصول {crop} لا يزال في وضع آمن بفضل مخزون التربة. ننصح بتأجيل الري لتشجيع الجذور على البحث عن الماء في العمق."
 

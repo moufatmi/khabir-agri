@@ -1,7 +1,7 @@
 import google.generativeai as genai
 
 # حط الـ API Key ديالك هنا
-genai.configure(api_key="AIzaSyAVJoT9vzcS6oeXRjh3QBovg284lWYw8TM")
+genai.configure(api_key="AIzaSyDZ77xzZ13g6UZYuX0SGknEBRsU2WTB91A")
 
 try:
     print("--- قائمة الموديلات المتاحة لحسابك ---")

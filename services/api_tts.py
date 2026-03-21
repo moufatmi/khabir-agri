@@ -5,9 +5,9 @@ import os
 async def generate_voice_advice(text: str, output_path: str):
     """
     Generate an MP3 file from text using edge-tts.
-    Voice: ar-MA-JamalNeural (Moroccan Arabic)
+    Voice: ar-MA-MounaNeural (Moroccan Female Neural)
     """
-    voice = "ar-SA-HamedNeural"
+    voice = "ar-MA-MounaNeural"
     communicate = edge_tts.Communicate(text, voice)
     await communicate.save(output_path)
 
