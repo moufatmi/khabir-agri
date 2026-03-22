@@ -1,7 +1,7 @@
 import google.generativeai as genai
 import sys
 
-NEW_KEY = "AIzaSyBYUxXCwgIxiz7gi1iioj1UurJPGISaXK4"
+NEW_KEY = "AIzaSyArLh0sAAwe92o7CrBqsEqCzNuIIkOhowI"
 genai.configure(api_key=NEW_KEY)
 
 def test_model(model_name):
