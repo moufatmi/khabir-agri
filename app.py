@@ -92,6 +92,7 @@ st.markdown("""
 
 from components.ui_irrigation import render_irrigation_advisor
 from components.ui_vision import render_vision_dashboard
+from components.ui_pitch import render_competition_pitch
 from config import CROP_FACTORS, GROWTH_STAGES, SOIL_TYPES, DEFAULT_PUMP_FLOW_RATE
 import folium
 from streamlit_folium import st_folium
@@ -138,7 +139,12 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    tab_irrigation, tab_vision = st.tabs(["💧 مستشار الري الذكي", "📸 عين الخبير (التشخيص)"])
+    tab_pitch, tab_irrigation, tab_vision = st.tabs(
+        ["🇲🇦 العرض والأثر", "💧 مستشار الري الذكي", "📸 عين الخبير (التشخيص)"]
+    )
+
+    with tab_pitch:
+        render_competition_pitch()
     
     # === TAB 1: SMART IRRIGATION ===
     with tab_irrigation:
@@ -147,8 +153,8 @@ def main():
             "الرجاء الضغط على موقع ضيعتك في الخريطة لبدء التحليل الحقيقي للاحتياج المائي."
         )
         
-        # Initialize Map centered on Morocco
-        m = folium.Map(location=[32.0, -6.0], zoom_start=6)
+        # Map centered on Oriental Morocco (Berkan / Oujda region)
+        m = folium.Map(location=[34.25, -2.35], zoom_start=8, tiles="OpenStreetMap")
         
         # If we have a clicked point in session state, add a marker
         if "clicked_coords" in st.session_state:

@@ -1,7 +1,7 @@
 import os
 
 # 1. API Keys (Prioritize env vars for prototype, you can edit these directly)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyDXlsZ3xmat11cYvzocVQR9Da42QsH57Ww")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyBYUxXCwgIxiz7gi1iioj1UurJPGISaXK4")
 WEATHER_API_KEY = os.getenv("WEATHER_API_KEY", "c4377ce01ad081892081c897b12890d7")
 
 # 2. Regional Settings & Coordinates for Mapping

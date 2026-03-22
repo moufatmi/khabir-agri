@@ -177,9 +177,13 @@ def render_irrigation_advisor(lat: float, lon: float, crop: str, stage: str, soi
         </div>
         """, unsafe_allow_html=True)
 
-        # 2. Premium Metrics Row
-        col_m1, col_m2, col_m3 = st.columns(3)
-        
+        # 2. Premium Metrics Row (+ NDVI / vigor hint)
+        ndvi_val = wapor.get("ndvi", "—")
+        ndvi_note = wapor.get("ndvi_note", "")
+        ndvi_display = f"{ndvi_val}" if isinstance(ndvi_val, (int, float)) else str(ndvi_val)
+
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+
         with col_m1:
             st.markdown(f"""
             <div class="metric-card">
@@ -187,15 +191,15 @@ def render_irrigation_advisor(lat: float, lon: float, crop: str, stage: str, soi
                 <div class="metric-value">{int(res['scheduled_liters'])} لتر</div>
             </div>
             """, unsafe_allow_html=True)
-            
+
         with col_m2:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-label">التوفير الشهري</div>
+                <div class="metric-label">التوفير الشهري (تقدير)</div>
                 <div class="metric-value">{int(savings_money * 30)} درهم</div>
             </div>
             """, unsafe_allow_html=True)
-            
+
         with col_m3:
             st.markdown(f"""
             <div class="metric-card">
@@ -203,6 +207,17 @@ def render_irrigation_advisor(lat: float, lon: float, crop: str, stage: str, soi
                 <div class="metric-value">{wapor['soil_moisture']}%</div>
             </div>
             """, unsafe_allow_html=True)
+
+        with col_m4:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">NDVI / النضارة</div>
+                <div class="metric-value">{ndvi_display}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        if ndvi_note:
+            st.caption(f"ℹ️ {ndvi_note}")
 
         # 3. AI Advice Section
         st.markdown(f"""
@@ -258,7 +273,12 @@ def render_irrigation_advisor(lat: float, lon: float, crop: str, stage: str, soi
             total_weekly_liters += d_daily_liters
 
         st.markdown("### 📅 7-day predictive graph")
-        st.markdown(f'<p style="color: #8B949E; margin-top: -10px;">مجموع الأسبوع: {int(total_weekly_liters)} لتر</p>', unsafe_allow_html=True)
+        fc_src = forecast_list[0].get("forecast_source", "") if forecast_list else ""
+        src_line = f" — مصدر التوقعات: {fc_src}" if fc_src else ""
+        st.markdown(
+            f'<p style="color: #8B949E; margin-top: -10px;">مجموع الأسبوع: {int(total_weekly_liters)} لتر{src_line}</p>',
+            unsafe_allow_html=True,
+        )
         
         chart_df = pd.DataFrame(forecast_chart_data)
         

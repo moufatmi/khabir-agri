@@ -49,9 +49,14 @@ def analyze_irrigation(user_prompt: str, weather: dict, etc: float, pumping_hour
     """
     تحليل معطيات السقي والرد باستعمال الموديل المجهز.
     """
-    status_msg = {"Red": "لا تسقي! المطر جاي أو الرطوبة طالعة.", 
-                  "Yellow": "حضي راسك، نقص من السقي.", 
-                  "Green": "سقي دابا."}[traffic_light]
+    tl_map = {"red": "Red", "yellow": "Yellow", "green": "Green"}
+    tl = tl_map.get(str(traffic_light).strip().lower(), traffic_light)
+    if tl not in ("Red", "Yellow", "Green"):
+        tl = "Yellow"
+
+    status_msg = {"Red": "لا تسقي! المطر جاي أو الرطوبة طالعة.",
+                  "Yellow": "حضي راسك، نقص من السقي.",
+                  "Green": "سقي دابا."}[tl]
                   
     dynamic_context = f"""
     المعطيات الحالية للمزارع:
@@ -78,7 +83,7 @@ def analyze_irrigation(user_prompt: str, weather: dict, etc: float, pumping_hour
         # Check if it's a quota error or other fail
         if "429" in str(e) or "quota" in str(e).lower():
             # Smart Fallback: Generate scientific advice locally
-            fallback_advice = generate_local_advice(crop, traffic_light, pumping_hours, etc)
+            fallback_advice = generate_local_advice(crop, tl, pumping_hours, etc)
             return None, f"LOCAL_FALLBACK:{fallback_advice}"
             
         error_msg = f"خطأ في الاتصال بـ Gemini: {str(e)}"
