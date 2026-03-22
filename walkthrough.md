@@ -29,7 +29,7 @@ agri AI/
 
 ### API Keys (Environment-first with fallback)
 ```python
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyDZ77xzZ13g6UZYuX0SGknEBRsU2WTB91A")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "<YOUR_KEY_OR_USE_ENV_ONLY>")
 WEATHER_API_KEY = os.getenv("WEATHER_API_KEY", "c4377ce01ad081892081c897b12890d7")
 ```
 > **Security Note:** Keys are hardcoded for hackathon ease. In production, these MUST be environment variables only.

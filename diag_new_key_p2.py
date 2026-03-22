@@ -1,7 +1,7 @@
 import google.generativeai as genai
 import sys
 
-NEW_KEY = "AIzaSyDZ77xzZ13g6UZYuX0SGknEBRsU2WTB91A"
+NEW_KEY = "AIzaSyDXlsZ3xmat11cYvzocVQR9Da42QsH57Ww"
 genai.configure(api_key=NEW_KEY)
 
 print("Listing models for the NEW key...")

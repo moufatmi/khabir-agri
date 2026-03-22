@@ -3,7 +3,7 @@ import google.generativeai as genai
 import requests
 
 # 1. إعدادات الـ APIs (حط مفاتيحك هنا)
-genai.configure(api_key="AIzaSyDZ77xzZ13g6UZYuX0SGknEBRsU2WTB91A")
+genai.configure(api_key="AIzaSyDXlsZ3xmat11cYvzocVQR9Da42QsH57Ww")
 WEATHER_API_KEY = "c4377ce01ad081892081c897b12890d7"
 
 # 2. منطق الحساب الفلاحي (FAO-56 & ORMVAM)
