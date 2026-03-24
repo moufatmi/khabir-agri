@@ -81,3 +81,6 @@ urllib3==2.6.3
 watchdog==6.0.0
 xyzservices==2025.11.0
 yarl==1.23.0
+fastapi==0.115.0
+uvicorn==0.30.6
+python-multipart==0.0.9
