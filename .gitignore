@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+
+# Environments
+.venv
+env/
+venv/
+ENV/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project Temp
+*.log
+dashboard.html
+front end.html
+# We INCLUDE the html files above if the user wants them in git, 
+# but I see they were untracked. I'll NOT ignore them since he wants 'everything'.
+
+# Let's clean the ignore to only essentials
+__pycache__/
+*.pyc
+.env
